@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employee Management - Hack Culprit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <h1 class="text-2xl font-bold mb-4">Employee Management</h1>
+
+  <h2 class="text-xl font-semibold mb-2">Add Employee</h2>
+  <form action="/add_employee" method="POST" class="bg-white p-4 rounded shadow mb-6">
+    <div class="mb-2">
+      <label>ID:</label>
+      <input type="text" name="id" required class="border p-2 w-full">
+    </div>
+    <div class="mb-2">
+      <label>Name:</label>
+      <input type="text" name="name" required class="border p-2 w-full">
+    </div>
+    <div class="mb-2">
+      <label>Department:</label>
+      <input type="text" name="department" required class="border p-2 w-full">
+    </div>
+    <div class="mb-2">
+      <label>Status:</label>
+      <select name="status" required class="border p-2 w-full">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </div>
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded mt-2">Add Employee</button>
+  </form>
+
+  <h2 class="text-xl font-semibold mb-2">Employee List</h2>
+  <table class="min-w-full bg-white rounded shadow">
+    <thead>
+      <tr>
+        <th class="border px-4 py-2">ID</th>
+        <th class="border px-4 py-2">Name</th>
+        <th class="border px-4 py-2">Department</th>
+        <th class="border px-4 py-2">Status</th>
+        <th class="border px-4 py-2">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for emp in employees %}
+      <tr>
+        <td class="border px-4 py-2">{{ emp.id }}</td>
+        <td class="border px-4 py-2">{{ emp.name }}</td>
+        <td class="border px-4 py-2">{{ emp.department }}</td>
+        <td class="border px-4 py-2">{{ emp.status }}</td>
+        <td class="border px-4 py-2">
+          <a href="/delete_employee/{{ emp.id }}" class="text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="mt-4">
+    <a href="/" class="text-blue-600 hover:underline">Back to Scanner</a>
+  </div>
+</body>
+</html>
