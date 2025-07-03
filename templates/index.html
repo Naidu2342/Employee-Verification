@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hack Culprit Employee Verification</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      margin: 10px 0;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+    #logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-top: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    #reader {
+      width: 320px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      margin: 30px 0;
+      background: white;
+    }
+    #result {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: 20px;
+      width: 320px;
+      text-align: left;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    #result h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 1.25rem;
+    }
+    #result p {
+      margin: 5px 0;
+      font-size: 0.95rem;
+    }
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .button {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 5px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+    .manage-button {
+      background: #28a745;
+      color: white;
+    }
+    .manage-button:hover {
+      background: #218838;
+    }
+    .logout-button {
+      background: tomato;
+      color: white;
+    }
+    .logout-button:hover {
+      background: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Logo -->
+  <img id="logo" src="{{ url_for('static', filename='hack culprit logo.jpg') }}" alt="Hack Culprit Logo">
+
+  <h1>Hack Culprit</h1>
+  <h2>Employee Verification</h2>
+
+  <div id="reader"></div>
+
+  <div id="result">
+    <p>Scan an employee QR code to see details here.</p>
+  </div>
+
+  <div class="button-container">
+    <a href="/employees" class="button manage-button">Manage Employees</a>
+    <a href="/logout" class="button logout-button">Logout</a>
+  </div>
+
+<script>
+  function onScanSuccess(decodedText, decodedResult) {
+    fetch('/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: decodedText })
+    })
+      .then(response => response.json())
+      .then(data => {
+        const resultDiv = document.getElementById('result');
+        if (data.status === 'success') {
+          const emp = data.employee;
+          resultDiv.innerHTML = `
+            <h3>✅ Employee Found</h3>
+            <p><b>ID:</b> ${emp.id}</p>
+            <p><b>Name:</b> ${emp.name}</p>
+            <p><b>Department:</b> ${emp.department}</p>
+            <p><b>Status:</b> <span style="color:${emp.status === 'Active' ? 'limegreen' : 'tomato'};font-weight:600;">${emp.status}</span></p>`;
+        } else {
+          resultDiv.innerHTML = `<p style="color:tomato;font-weight:600;">${data.message}</p>`;
+        }
+      })
+      .catch(err => {
+        console.error(err);
+      });
+  }
+
+  let html5QrcodeScanner = new Html5QrcodeScanner(
+    "reader", { fps: 10, qrbox: 250 });
+  html5QrcodeScanner.render(onScanSuccess);
+</script>
+
+</body>
+</html>
