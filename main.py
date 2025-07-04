@@ -92,6 +92,21 @@ def add_employee():
 
     return redirect(url_for('employees'))
 
+@app.route('/delete_employee/<emp_id>', methods=['POST'])
+def delete_employee(emp_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    records = get_all_employees()
+    # Google Sheets rows start at 2 (since row 1 is header)
+    for idx, emp in enumerate(records, start=2):
+        if emp['id'] == emp_id:
+            sheet.delete_row(idx)
+            break
+
+    return redirect(url_for('employees'))
+
+
 
 # Optional: Implement delete and update routes similarly using sheet.delete_row() and sheet.update_cell()
 
