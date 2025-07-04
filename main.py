@@ -1,23 +1,34 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-import pandas as pd
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import json
 import os
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
-EMPLOYEE_FILE = 'employees.csv'
+# Google Sheets API setup
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+# Load credentials from environment variable (for Render)
+creds_dict = json.loads(os.environ.get('GOOGLE_CREDS'))
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+client = gspread.authorize(creds)
+sheet = client.open("Employee").sheet1  # Change "YourSheetName" to your actual Google Sheet name
 
 # Sample login credentials
 users = {
     "admin": "Hackculprit"
 }
 
-# Load employee data
-def load_employees():
-    return pd.read_csv(EMPLOYEE_FILE)
+def get_all_employees():
+    """Fetch all employee records from Google Sheet as list of dicts."""
+    return sheet.get_all_records()
 
-def save_employees(df):
-    df.to_csv(EMPLOYEE_FILE, index=False)
+def employee_exists(emp_id):
+    """Check if employee id exists."""
+    records = get_all_employees()
+    return any(emp['id'] == emp_id for emp in records)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -45,50 +56,44 @@ def index():
 @app.route('/lookup', methods=['POST'])
 def lookup():
     if 'username' not in session:
-        return {'status': 'error', 'message': 'Unauthorized'}, 401
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
 
     data = request.get_json()
     emp_id = data.get('id', '').strip()
-    df = load_employees()
-    emp = df[df['id'] == emp_id]
-    if not emp.empty:
-        emp_data = emp.iloc[0].to_dict()
-        return {'status': 'success', 'employee': emp_data}
+    records = get_all_employees()
+    emp = next((emp for emp in records if emp['id'] == emp_id), None)
+    if emp:
+        return jsonify({'status': 'success', 'employee': emp})
     else:
-        return {'status': 'error', 'message': f'Employee ID "{emp_id}" not found.'}
+        return jsonify({'status': 'error', 'message': f'Employee ID "{emp_id}" not found.'})
 
 @app.route('/employees')
 def employees():
     if 'username' not in session:
         return redirect(url_for('login'))
-    df = load_employees()
-    return render_template('employees.html', employees=df.to_dict(orient='records'))
+    records = get_all_employees()
+    return render_template('employees.html', employees=records)
 
 @app.route('/add_employee', methods=['POST'])
 def add_employee():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    emp_id = request.form['id']
-    name = request.form['name']
-    department = request.form['department']
-    status = request.form['status']
+    emp_id = request.form['id'].strip()
+    name = request.form['name'].strip()
+    department = request.form['department'].strip()
+    status = request.form['status'].strip()
 
-    df = load_employees()
-    if emp_id in df['id'].values:
+    if employee_exists(emp_id):
         return "Employee ID already exists.", 400
 
-    new_row = pd.DataFrame([{
-        'id': emp_id,
-        'name': name,
-        'department': department,
-        'status': status
-    }])
+    # Append new row (order should match your sheet columns)
+    sheet.append_row([emp_id, name, department, status])
 
-    df = pd.concat([df, new_row], ignore_index=True)
-    save_employees(df)
     return redirect(url_for('employees'))
 
+
+# Optional: Implement delete and update routes similarly using sheet.delete_row() and sheet.update_cell()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
