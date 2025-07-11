@@ -98,11 +98,19 @@ def delete_employee(emp_id):
         return redirect(url_for('login'))
 
     records = get_all_employees()
-    # Google Sheets rows start at 2 (since row 1 is header)
+    found = False
     for idx, emp in enumerate(records, start=2):
         if emp['id'] == emp_id:
-            sheet.delete_row(idx)
-            break
+            try:
+                sheet.delete_row(idx)
+                found = True
+                break
+            except Exception as e:
+                print(f"Error deleting row {idx}: {e}")
+                return f"Error deleting employee: {e}", 500
+
+    if not found:
+        return f"Employee ID '{emp_id}' not found.", 404
 
     return redirect(url_for('employees'))
 
