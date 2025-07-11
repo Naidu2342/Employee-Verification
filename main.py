@@ -102,7 +102,7 @@ def delete_employee(emp_id):
     for idx, emp in enumerate(records, start=2):
         if emp['id'] == emp_id:
             try:
-                sheet.delete_row(idx)
+                sheet.delete_rows(idx)  # ✅ Fixed method
                 found = True
                 break
             except Exception as e:
@@ -113,9 +113,6 @@ def delete_employee(emp_id):
         return f"Employee ID '{emp_id}' not found.", 404
 
     return redirect(url_for('employees'))
-
-
-
 # Optional: Implement delete and update routes similarly using sheet.delete_row() and sheet.update_cell()
 
 if __name__ == "__main__":
